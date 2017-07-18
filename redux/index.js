@@ -8,6 +8,7 @@ import warning from './utils/warning'
 /*
 * This is a dummy function to check if the function name has been altered by minification.
 * If the function has been minified and NODE_ENV !== 'production', warn the user.
+* 校验非生产环境下代码是否被压缩
 */
 function isCrushed() {}
 
@@ -25,10 +26,11 @@ if (
   )
 }
 
+//暴露的API
 export {
-  createStore,
-  combineReducers,
-  bindActionCreators,
-  applyMiddleware,
-  compose
+  createStore, // 创建store
+  combineReducers, // 合并reducer
+  bindActionCreators, // 把 action creators 转成拥有同名 keys 的对象,使用时可以直接调用
+  applyMiddleware, // 使用自定义的中间件
+  compose // 函数组合
 }

@@ -1,33 +1,31 @@
+/**
+ * 返回一个用 dispatch 包裹的新函数
+ */
 function bindActionCreator(actionCreator, dispatch) {
   return (...args) => dispatch(actionCreator(...args))
 }
 
 /**
- * Turns an object whose values are action creators, into an object with the
- * same keys, but with every function wrapped into a `dispatch` call so they
- * may be invoked directly. This is just a convenience method, as you can call
- * `store.dispatch(MyActionCreators.doSomething())` yourself just fine.
+ * 将 action creators 转换为同名对象，但使用 dispatch 将他们包装起来，这样就可以直接调用他们了
+ * 主要是方便，不用自己手动 `store.dispatch(MyActionCreators.doSomething())`
  *
- * For convenience, you can also pass a single function as the first argument,
- * and get a function in return.
+ * 方便起见，你可以传入一个函数作为第一个参数，它会返回一个函数
  *
- * @param {Function|Object} actionCreators An object whose values are action
- * creator functions. One handy way to obtain it is to use ES6 `import * as`
- * syntax. You may also pass a single function.
+ * @param {Function|Object} actionCreators，一个 actionCreator 函数
+ * 或者包含多个 actionCreator 的对象
  *
- * @param {Function} dispatch The `dispatch` function available on your Redux
- * store.
+ * @param {Function} dispatch  `dispatch` 函数，store 提供
  *
- * @returns {Function|Object} The object mimicking the original object, but with
- * every action creator wrapped into the `dispatch` call. If you passed a
- * function as `actionCreators`, the return value will also be a single
- * function.
+ * @returns {Function|Object}
+ * 仿照原对象返回，只不过每个 action creator会被一个 `dispatch` 包含
+ * 如果传入一个函数，返回值也是一个函数
  */
 export default function bindActionCreators(actionCreators, dispatch) {
   if (typeof actionCreators === 'function') {
     return bindActionCreator(actionCreators, dispatch)
   }
 
+  //类型错误
   if (typeof actionCreators !== 'object' || actionCreators === null) {
     throw new Error(
       `bindActionCreators expected an object or a function, instead received ${actionCreators === null ? 'null' : typeof actionCreators}. ` +
@@ -35,6 +33,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
     )
   }
 
+  // 处理多个action creators
   var keys = Object.keys(actionCreators)
   var boundActionCreators = {}
   for (var i = 0; i < keys.length; i++) {
