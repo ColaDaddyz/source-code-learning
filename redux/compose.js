@@ -1,8 +1,7 @@
 /**
- * Composes single-argument functions from right to left. The rightmost
- * function can take multiple arguments as it provides the signature for
- * the resulting composite function.
+ * 将单入参的函数从右至左组合起来，最右的函数可以接受多个参数，
  *
+ * 接受一组函数，从右到左组合，然后返回生成的函数组合
  * @param {...Function} funcs The functions to compose.
  * @returns {Function} A function obtained by composing the argument functions
  * from right to left. For example, compose(f, g, h) is identical to doing
