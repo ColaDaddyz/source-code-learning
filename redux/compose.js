@@ -1,5 +1,4 @@
 /**
- * 将单入参的函数从右至左组合起来，最右的函数可以接受多个参数，
  *
  * 接受一组函数，从右到左组合，然后返回生成的函数组合
  * @param {...Function} funcs The functions to compose.
@@ -17,5 +16,8 @@ export default function compose(...funcs) {
         return funcs[0]
     }
 
+    /**
+     * 没有initValue，数组的第一位会作为previous，第二位作为current开始迭代
+     */
     return funcs.reduce((a, b) => (...args) => a(b(...args)))
 }

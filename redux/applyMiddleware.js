@@ -24,9 +24,11 @@ export default function applyMiddleware(...middlewares) {
 
         const middlewareAPI = {
             getState: store.getState,
-            dispatch: (action) => dispatch(action)
+            dispatch: (action) => dispatch(action) //保证 dispatch更新后，内部的dispatch能跟着变化
         }
         chain = middlewares.map(middleware => middleware(middlewareAPI))
+
+        // dispatch = middle1ware1(middle1ware2(store.dispatch)) 此时将多个中间件串联起来了
         dispatch = compose(...chain)(store.dispatch)
 
         return {
