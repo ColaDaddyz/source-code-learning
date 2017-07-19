@@ -1,11 +1,15 @@
-import isPlainObject from 'lodash/isPlainObject'
-import $$observable from 'symbol-observable'
+import isPlainObject from 'lodash/isPlainObject';
+import $$observable from 'symbol-observable';
 
 /**
  * These are private action types reserved by Redux.
  * For any unknown actions, you must return the current state.
  * If the current state is undefined, you must return the initial state.
  * Do not reference these action types directly in your code.
+ * Redux 私有action
+ * 对于一些未知的 actions，你必须返回当前的state
+ * 如果当前的 state 是undefined，你必须返回初始值
+ * 必要在你的代码里引用这种 action types
  */
 export const ActionTypes = {
     INIT: '@@redux/INIT'
@@ -37,11 +41,13 @@ export const ActionTypes = {
  * and subscribe to changes.
  */
 export default function createStore(reducer, preloadedState, enhancer) {
+    // 根据传参个数和类型，指定 preloadedState 和 enhancer
     if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
         enhancer = preloadedState
         preloadedState = undefined
     }
 
+    // 如果 enhancer 存在切合法，走 enhancer 逻辑，return
     if (typeof enhancer !== 'undefined') {
         if (typeof enhancer !== 'function') {
             throw new Error('Expected the enhancer to be a function.')
@@ -54,12 +60,17 @@ export default function createStore(reducer, preloadedState, enhancer) {
         throw new Error('Expected the reducer to be a function.')
     }
 
+    // 当前的 reducer
     let currentReducer = reducer
+    // 当前的 state
     let currentState = preloadedState
+    // 监听函数列表，触发 action 后会依次触发
     let currentListeners = []
+    //
     let nextListeners = currentListeners
     let isDispatching = false
 
+    // nextListeners 生成一个新的引用
     function ensureCanMutateNextListeners() {
         if (nextListeners === currentListeners) {
             nextListeners = currentListeners.slice()
@@ -67,7 +78,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     /**
-     * Reads the state tree managed by the store.
+     * 读取当前 store 的数据
      *
      * @returns {any} The current state tree of your application.
      */
@@ -79,6 +90,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
      * Adds a change listener. It will be called any time an action is dispatched,
      * and some part of the state tree may potentially have changed. You may then
      * call `getState()` to read the current state tree inside the callback.
+     * 添加一个监听器。每次 dispatch action 时，或者 state 树的一部分变化时都会触发。
      *
      * You may call `dispatch()` from a change listener, with the following
      * caveats:
@@ -88,6 +100,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
      * will not have any effect on the `dispatch()` that is currently in progress.
      * However, the next `dispatch()` call, whether nested or not, will use a more
      * recent snapshot of the subscription list.
+     * 监听器都是dispatch之前的快照，如果你的监听器已经
      *
      * 2. The listener should not expect to see all state changes, as the state
      * might have been updated multiple times during a nested `dispatch()` before
@@ -103,8 +116,10 @@ export default function createStore(reducer, preloadedState, enhancer) {
             throw new Error('Expected listener to be a function.')
         }
 
+        // 标记是否有listener
         let isSubscribed = true
 
+        // 保存一份快照
         ensureCanMutateNextListeners()
         nextListeners.push(listener)
 
@@ -122,7 +137,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     /**
-     * Dispatches an action. It is the only way to trigger a state change.
+     * Dispatches action，这是唯一能触发 state 变化的方法
      *
      * The `reducer` function, used to create the store, will be called with the
      * current state tree and the given `action`. Its return value will
@@ -147,6 +162,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
      * return something else (for example, a Promise you can await).
      */
     function dispatch(action) {
+        // 异常处理
         if (!isPlainObject(action)) {
             throw new Error(
                 'Actions must be plain objects. ' +
@@ -161,10 +177,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
             )
         }
 
+        // reducer 内部不允许再dispatch actions；否则抛出异常
         if (isDispatching) {
             throw new Error('Reducers may not dispatch actions.')
         }
 
+        // 捕获前一个错误，但是会将 isDispatching 置为 false，避免影响后续的 action 执行
         try {
             isDispatching = true
             currentState = currentReducer(currentState, action)
@@ -174,6 +192,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
         const listeners = currentListeners = nextListeners
         for (let i = 0; i < listeners.length; i++) {
+            // 直接执行会导致 函数内部的 this 指向 listeners
             const listener = listeners[i]
             listener()
         }
@@ -182,12 +201,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     /**
-     * Replaces the reducer currently used by the store to calculate the state.
      *
-     * You might need this if your app implements code splitting and you want to
-     * load some of the reducers dynamically. You might also need this if you
-     * implement a hot reloading mechanism for Redux.
-     *
+     * 替换 reducer
+     * 主要用于
+     * 1. hot reload
+     * 2. 代码分割，动态reducer
+     * 3.
      * @param {Function} nextReducer The reducer for the store to use instead.
      * @returns {void}
      */

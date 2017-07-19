@@ -59,6 +59,7 @@ function assertReducerShape(reducers) {
         const reducer = reducers[key];
         const initialState = reducer(undefined, {type: ActionTypes.INIT});
 
+        // 初始化不能返回 undefined
         if (typeof initialState === 'undefined') {
             throw new Error(
                 `Reducer "${key}" returned undefined during initialization. ` +
@@ -112,6 +113,7 @@ export default function combineReducers(reducers) {
         }
 
         if (typeof reducers[key] === 'function') {
+            // 一轮清洗后获取最后的 reducer map
             finalReducers[key] = reducers[key];
         }
     }
@@ -126,6 +128,7 @@ export default function combineReducers(reducers) {
     try {
         assertReducerShape(finalReducers);
     } catch (e) {
+        // combine时不抛出，执行时才抛出异常
         shapeAssertionError = e;
     }
 
@@ -146,15 +149,20 @@ export default function combineReducers(reducers) {
         for (let i = 0; i < finalReducerKeys.length; i++) {
             const key = finalReducerKeys[i];
             const reducer = finalReducers[key];
+            // 获取前一次reducer
             const previousStateForKey = state[key];
+            // 获取当前reducer
             const nextStateForKey = reducer(previousStateForKey, action);
             if (typeof nextStateForKey === 'undefined') {
                 const errorMessage = getUndefinedStateErrorMessage(key, action);
                 throw new Error(errorMessage);
             }
             nextState[key] = nextStateForKey;
+            // 判断是否改变
             hasChanged = hasChanged || nextStateForKey !== previousStateForKey;
         }
+        // 如果没改变，返回前一个state，否则返回新的state
+        // 目的：可以方便调用方判断数据是否变化，比如 react 可以不重新渲染
         return hasChanged ? nextState : state;
     }
 }
