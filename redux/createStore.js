@@ -2,43 +2,31 @@ import isPlainObject from 'lodash/isPlainObject';
 import $$observable from 'symbol-observable';
 
 /**
- * These are private action types reserved by Redux.
- * For any unknown actions, you must return the current state.
- * If the current state is undefined, you must return the initial state.
- * Do not reference these action types directly in your code.
  * Redux 私有action
  * 对于一些未知的 actions，你必须返回当前的state
  * 如果当前的 state 是undefined，你必须返回初始值
- * 必要在你的代码里引用这种 action types
+ * 不要在你的代码里引用这种 action types
  */
 export const ActionTypes = {
     INIT: '@@redux/INIT'
 }
 
 /**
- * Creates a Redux store that holds the state tree.
- * The only way to change the data in the store is to call `dispatch()` on it.
  *
- * There should only be a single store in your app. To specify how different
- * parts of the state tree respond to actions, you may combine several reducers
- * into a single reducer function by using `combineReducers`.
+ * 创建一个 Redux store 保存你的 state 树，你只能使用 `dispatch()` 来改变你 store 上的数据
+ * 为了根据 actions 区分 state，你可以使用 combineReducers 将多个 reducers 合并成一个
  *
- * @param {Function} reducer A function that returns the next state tree, given
- * the current state tree and the action to handle.
+ * @param {Function} reducer 一个函数，接收当前的 state 和要处理的 action，返回新的 state 树
  *
- * @param {any} [preloadedState] The initial state. You may optionally specify it
- * to hydrate the state from the server in universal apps, or to restore a
- * previously serialized user session.
- * If you use `combineReducers` to produce the root reducer function, this must be
- * an object with the same shape as `combineReducers` keys.
+ * @param {any} [preloadedState]
+ * 初始化 state。这是一个可选项，使用它你可以在程序中将服务端的数据合并到 store 上，或者
+ * 恢复之前序列化过的用户会话
  *
- * @param {Function} [enhancer] The store enhancer. You may optionally specify it
- * to enhance the store with third-party capabilities such as middleware,
- * time travel, persistence, etc. The only store enhancer that ships with Redux
- * is `applyMiddleware()`.
+ * @param {Function} [enhancer]
+ * 可选项。利用它你可以使用第三方功能增强你的 store，比如中间件，时间旅行，持久化数据等等。
+ * Redux 附带的 enhancer 是 applyMiddleware
  *
- * @returns {Store} A Redux store that lets you read the state, dispatch actions
- * and subscribe to changes.
+ * @returns {Store} 返回 Redux store，它允许你读取 state，dispatch actions 以及监听变化
  */
 export default function createStore(reducer, preloadedState, enhancer) {
     // 根据传参个数和类型，指定 preloadedState 和 enhancer
@@ -47,7 +35,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
         preloadedState = undefined
     }
 
-    // 如果 enhancer 存在切合法，走 enhancer 逻辑，return
+    // 如果 enhancer 存在且合法，走 enhancer 逻辑，return
     if (typeof enhancer !== 'undefined') {
         if (typeof enhancer !== 'function') {
             throw new Error('Expected the enhancer to be a function.')
@@ -60,17 +48,17 @@ export default function createStore(reducer, preloadedState, enhancer) {
         throw new Error('Expected the reducer to be a function.')
     }
 
-    // 当前的 reducer
+    // reducer 赋值给 currentReducer
     let currentReducer = reducer
-    // 当前的 state
+    // 初始化 state 赋值给 currentState
     let currentState = preloadedState
     // 监听函数列表，触发 action 后会依次触发
     let currentListeners = []
-    //
+    // 将 nextListeners 和 currentListeners 指向同一个引用
     let nextListeners = currentListeners
     let isDispatching = false
 
-    // nextListeners 生成一个新的引用
+    // 保存一份 nextListeners 快照
     function ensureCanMutateNextListeners() {
         if (nextListeners === currentListeners) {
             nextListeners = currentListeners.slice()
@@ -80,36 +68,27 @@ export default function createStore(reducer, preloadedState, enhancer) {
     /**
      * 读取当前 store 的数据
      *
-     * @returns {any} The current state tree of your application.
+     * @returns {any} 返回放弃应用的 state
      */
     function getState() {
         return currentState
     }
 
     /**
-     * Adds a change listener. It will be called any time an action is dispatched,
-     * and some part of the state tree may potentially have changed. You may then
-     * call `getState()` to read the current state tree inside the callback.
-     * 添加一个监听器。每次 dispatch action 时，或者 state 树的一部分变化时都会触发。
+     * 添加一个监听器。每次 dispatch action 导致 state 树的一部分变化时都会触发。
+     * 你可以在 listener 函数内调用 getState() 方法获取当前的 state
      *
-     * You may call `dispatch()` from a change listener, with the following
-     * caveats:
+     * 你可以在监听函数内部调用dispatch，但是有几个注意事项：
      *
-     * 1. The subscriptions are snapshotted just before every `dispatch()` call.
-     * If you subscribe or unsubscribe while the listeners are being invoked, this
-     * will not have any effect on the `dispatch()` that is currently in progress.
-     * However, the next `dispatch()` call, whether nested or not, will use a more
-     * recent snapshot of the subscription list.
-     * 监听器都是dispatch之前的快照，如果你的监听器已经
+     * 1. 在每次 `dispatch()` 调用之前都会保存一次 subscriptions 的快照。
+     *    如果你在监听器执行时进行了 subscribe 或者 unsubscribe
+     *    对当前的 dispatch 不会有影响，但是对于下一次的 dispatch，无论是否嵌套了，都会取最近一次的快照
      *
-     * 2. The listener should not expect to see all state changes, as the state
-     * might have been updated multiple times during a nested `dispatch()` before
-     * the listener is called. It is, however, guaranteed that all subscribers
-     * registered before the `dispatch()` started will be called with the latest
-     * state by the time it exits.
+     * 2. 由于嵌套 dispatch 的存在，在 listener 被调用前 store 可能就被更改了很多次，此时你的 listener 可能无法观测到所有的变化。
+     *    但是在 `dispatch()` 开始前被注册的 listeners 在被调用时一定能获取最新的 state
      *
-     * @param {Function} listener A callback to be invoked on every dispatch.
-     * @returns {Function} A function to remove this change listener.
+     * @param {Function} listener 每次 dispatch 时要触发的回调
+     * @returns {Function} 返回一个函数，可以 unsubscribe 你的回调
      */
     function subscribe(listener) {
         if (typeof listener !== 'function') {
@@ -139,27 +118,21 @@ export default function createStore(reducer, preloadedState, enhancer) {
     /**
      * Dispatches action，这是唯一能触发 state 变化的方法
      *
-     * The `reducer` function, used to create the store, will be called with the
-     * current state tree and the given `action`. Its return value will
-     * be considered the **next** state of the tree, and the change listeners
-     * will be notified.
+     * 当调用 dispatch 时，会将当前的 state 和 `action` 传入 reducer 函数，
+     * 它返回一个新的 state，作为下一个 state 树，并且此时所有的 listeners 都会被通知
      *
-     * The base implementation only supports plain object actions. If you want to
-     * dispatch a Promise, an Observable, a thunk, or something else, you need to
-     * wrap your store creating function into the corresponding middleware. For
-     * example, see the documentation for the `redux-thunk` package. Even the
-     * middleware will eventually dispatch plain object actions using this method.
+     * 这里只支持传入普通对象，如果你希望支持 Promise，Observable，thunk或者别的，
+     * 你需要使用相关的 middleware 来包裹你创建 store 的函数。
+     * 举个例子，你可以看看 `redux-thunk`。
      *
-     * @param {Object} action A plain object representing “what changed”. It is
-     * a good idea to keep actions serializable so you can record and replay user
-     * sessions, or use the time travelling `redux-devtools`. An action must have
-     * a `type` property which may not be `undefined`. It is a good idea to use
-     * string constants for action types.
+     * @param {Object} action
+     *  一个普通对象，它代表着"发什么了什么改变"。
+     *  最好保证 action 是可串联的，这样你可以记录和复盘用户操作，也可以使用 redux-devtools 进行时间旅行，
+     *  action 中必须有一个 `type` 属性，而且不能等于 `undefined`，这个 type 最好使用一个字符串常量。
      *
-     * @returns {Object} For convenience, the same action object you dispatched.
+     * @returns {Object} 方便起见，dispatch 会返回你传入的 action
      *
-     * Note that, if you use a custom middleware, it may wrap `dispatch()` to
-     * return something else (for example, a Promise you can await).
+     * 注意：如果你使用自定义的中间件，它可能会对 `dispatch()` 的返回值做一些修改。
      */
     function dispatch(action) {
         // 异常处理
@@ -192,7 +165,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
         const listeners = currentListeners = nextListeners
         for (let i = 0; i < listeners.length; i++) {
-            // 直接执行会导致 函数内部的 this 指向 listeners
+            // 直接执行 listeners[i]() 会导致函数内部的 this 指向 listeners
             const listener = listeners[i]
             listener()
         }
@@ -205,9 +178,8 @@ export default function createStore(reducer, preloadedState, enhancer) {
      * 替换 reducer
      * 主要用于
      * 1. hot reload
-     * 2. 代码分割，动态reducer
-     * 3.
-     * @param {Function} nextReducer The reducer for the store to use instead.
+     * 2. 代码分割，动态更新reducer
+     * @param {Function} nextReducer 返回替换过后的reducer
      * @returns {void}
      */
     function replaceReducer(nextReducer) {
@@ -220,9 +192,9 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     /**
-     * Interoperability point for observable/reactive libraries.
-     * @returns {observable} A minimal observable of state changes.
-     * For more information, see the observable proposal:
+     * 为 observable 或 reactive 库提供的API，但是 Redux 中没有看到使用过
+     * @returns {observable}
+     * 想了解更多关于 observable 的可以看看:
      * https://github.com/tc39/proposal-observable
      */
     function observable() {
@@ -258,9 +230,10 @@ export default function createStore(reducer, preloadedState, enhancer) {
         }
     }
 
-    // When a store is created, an "INIT" action is dispatched so that every
-    // reducer returns their initial state. This effectively populates
-    // the initial state tree.
+
+    // 当创建一个 store 时，需呀 dispatch "INIT" action，每个 reducer都会返回初始的 state
+    // 此时就构建好了初始的 state 树
+
     dispatch({ type: ActionTypes.INIT })
 
     return {
