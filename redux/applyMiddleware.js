@@ -1,18 +1,14 @@
 import compose from './compose'
 
 /**
- * Creates a store enhancer that applies middleware to the dispatch method
- * of the Redux store. This is handy for a variety of tasks, such as expressing
- * asynchronous actions in a concise manner, or logging every action payload.
+ * 创建一个 store 增强器，给 dispatch 函数提供一个中间件。
+ * 它方便我们处理各种任务，比如异步 actions，或者提供每次用户行为的日志
  *
- * See `redux-thunk` package as an example of the Redux middleware.
+ * 可以看看 `redux-thunk`，它是 Redux 中间件的一个例子
  *
- * Because middleware is potentially asynchronous, this should be the first
- * store enhancer in the composition chain.
+ * store enhancer 可以是一个 compose 链，但是因为中间件可能是异步的，所以它必须是这个 compose 链的第一个
  *
- * Note that each middleware will be given the `dispatch` and `getState` functions
- * as named arguments.
- *
+ * 注意：每个中间件需要提供 `dispatch` 和 `getState` 两个命名函数
  * @param {...Function} middlewares The middleware chain to be applied.
  * @returns {Function} A store enhancer applying the middleware.
  */

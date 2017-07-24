@@ -98,7 +98,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
         // 标记是否有listener
         let isSubscribed = true
 
-        // 保存一份快照
+        // subscribe时保存一份快照
         ensureCanMutateNextListeners()
         nextListeners.push(listener)
 
@@ -108,8 +108,9 @@ export default function createStore(reducer, preloadedState, enhancer) {
             }
 
             isSubscribed = false
-
+            // unsubscribe 时再保存一份快照
             ensureCanMutateNextListeners()
+            //移除对应的 listener
             const index = nextListeners.indexOf(listener)
             nextListeners.splice(index, 1)
         }
