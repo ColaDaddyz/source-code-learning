@@ -96,7 +96,7 @@ export function pureFinalPropsSelectorFactory(
 // allowing connectAdvanced's shouldComponentUpdate to return false if final
 // props have not changed. If false, the selector will always return a new
 // object and shouldComponentUpdate will always return true.
-
+// selectorFactory 就是根据 pure 做的一系列
 export default function finalPropsSelectorFactory(dispatch, {
   initMapStateToProps,
   initMapDispatchToProps,
@@ -107,9 +107,11 @@ export default function finalPropsSelectorFactory(dispatch, {
   const mapDispatchToProps = initMapDispatchToProps(dispatch, options)
   const mergeProps = initMergeProps(dispatch, options)
 
+  // 开发环境做一些提示，比如 mapStateToProps 这些必须存在，以及需要包含 dependsOnOwnProps
   if (process.env.NODE_ENV !== 'production') {
     verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName)
   }
+
 
   const selectorFactory = options.pure
     ? pureFinalPropsSelectorFactory

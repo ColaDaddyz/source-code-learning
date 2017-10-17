@@ -1,12 +1,10 @@
-// encapsulates the subscription logic for connecting a component to the redux store, as
-// well as nesting subscriptions of descendant components, so that we can ensure the
-// ancestor components re-render before descendants
-
+// 封装了组件 subscription store 以及嵌套子组件 subscription store 的逻辑
+// 保证了父组件在子组件之前 re-render
 const CLEARED = null
 const nullListeners = { notify() {} }
 
 function createListenerCollection() {
-  // the current/next pattern is copied from redux's createStore code.
+  // 仿照 redux 的 creatStore 模型开发的这个发布订阅模式
   // TODO: refactor+expose that code to be reusable here?
   let current = []
   let next = []
