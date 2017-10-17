@@ -37,6 +37,7 @@ function strictEqual(a, b) { return a === b }
 
 // createConnect with default args builds the 'official' connect behavior. Calling it with
 // different options opens up some testing and extensibility scenarios
+// 利用 connectHOC 和一些默认配置生成connect；
 export function createConnect({
   connectHOC = connectAdvanced,
   mapStateToPropsFactories = defaultMapStateToPropsFactories,
@@ -62,13 +63,14 @@ export function createConnect({
     const initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps')
 
     return connectHOC(selectorFactory, {
-      // used in error messages
+      // 错误信息中使用
       methodName: 'connect',
 
-       // used to compute Connect's displayName from the wrapped component's displayName.
+      // 根据容器组件的 displayName 生成 Connect 的 displayName
       getDisplayName: name => `Connect(${name})`,
 
-      // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
+
+      // 如果传入 mapStateToProps 是一个 falsy 的值（比如为空），那么 Connect 不再监听 store 的变化
       shouldHandleStateChanges: Boolean(mapStateToProps),
 
       // passed through to selectorFactory

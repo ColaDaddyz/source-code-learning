@@ -22,6 +22,9 @@ function warnAboutReceivingStore() {
 export function createProvider(storeKey = 'store', subKey) {
     const subscriptionKey = subKey || `${storeKey}Subscription`
 
+    /**
+     * 利用 context 将store和监听函数向connet传递
+     */
     class Provider extends Component {
         getChildContext() {
           return { [storeKey]: this[storeKey], [subscriptionKey]: null }

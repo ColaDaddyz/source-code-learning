@@ -31,12 +31,13 @@ export function wrapMergePropsFunc(mergeProps) {
   }
 }
 
+// 如果传入 mergeProps 函数，做一层包装
 export function whenMergePropsIsFunction(mergeProps) {
   return (typeof mergeProps === 'function')
     ? wrapMergePropsFunc(mergeProps)
     : undefined
 }
-
+// 未传入 mergeProps 时调用 defaultMergeProps
 export function whenMergePropsIsOmitted(mergeProps) {
   return (!mergeProps)
     ? () => defaultMergeProps

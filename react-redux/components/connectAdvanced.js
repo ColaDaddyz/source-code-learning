@@ -1,9 +1,9 @@
-import hoistStatics from 'hoist-non-react-statics'
-import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import hoistStatics from 'hoist-non-react-statics';
+import invariant from 'invariant';
+import {Component, createElement} from 'react';
+import {storeShape, subscriptionShape} from '../utils/PropTypes';
 
-import Subscription from '../utils/Subscription'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import Subscription from '../utils/Subscription';
 
 let hotReloadingVersion = 0
 const dummyState = {}
@@ -29,6 +29,7 @@ function makeSelectorStateful(sourceSelector, store) {
   return selector
 }
 
+// connect 核心部分
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -50,28 +51,28 @@ export default function connectAdvanced(
   selectorFactory,
   // options object:
   {
-    // the func used to compute this HOC's displayName from the wrapped component's displayName.
-    // probably overridden by wrapper functions such as connect()
+      // 通过容器组件的 displayName 生成高阶组件的 displayName，通常会被容器函数覆盖，比如 connect 就覆盖了这个函数
     getDisplayName = name => `ConnectAdvanced(${name})`,
 
-    // shown in error messages
-    // probably overridden by wrapper functions such as connect()
+      // 错误提示时使用，通常也会被覆盖掉
     methodName = 'connectAdvanced',
 
     // if defined, the name of the property passed to the wrapped element indicating the number of
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
+    // TODO
+    // 通常在 react devtools 中被用来监听一些无意义的重复渲染
     renderCountProp = undefined,
 
-    // determines whether this HOC subscribes to store changes
+    // 决定这个高阶组件是否要监听 store 的变化
     shouldHandleStateChanges = true,
 
-    // the key of props/context to get the store
+    // props 或者 context 上存储的 store 的 key 值
     storeKey = 'store',
 
-    // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
+    // 如果是 true，这个高阶组件会暴露一个 getWrappedInstance() 方法，通过它可以获取这个高阶组件的包裹元素
     withRef = false,
 
-    // additional options are passed through to the selectorFactory
+    // 其他传入的配置项
     ...connectOptions
   } = {}
 ) {
@@ -129,15 +130,14 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
+        // 初始化 selector，selector 主要根据 store 和 props 生成新的 props，以及返回是否要更新组件
         this.initSelector()
         this.initSubscription()
       }
 
       getChildContext() {
-        // If this component received store from props, its subscription should be transparent
-        // to any descendants receiving store+subscription from context; it passes along
-        // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
-        // Connect to control ordering of notifications to flow top-down.
+        // 如果这个组件从 props 上获取 store，那么那些从 context 上获取 store+subscription 的子组件就不能获取到这个组件的 subscription，并且此时需要透传父级传递来的 subscription
+        // 否则，它会影响父组件的 subscription(因为祖先组件允许 Connect 控制 subscription 自顶向下触发）
         const subscription = this.propsMode ? null : this.subscription
         return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
       }
@@ -151,6 +151,8 @@ export default function connectAdvanced(
         // To handle the case where a child component may have triggered a state change by
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
+        // SSR 时会触发componentWillMount，但是不会触发 componentDidMount 和 componentWillUnmount
+        //
         this.subscription.trySubscribe()
         this.selector.run(this.props)
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
@@ -194,8 +196,7 @@ export default function connectAdvanced(
       initSubscription() {
         if (!shouldHandleStateChanges) return
 
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
+        // 根据 propsMode 确保 store 和 subscription 来源统一，要么都是 props 上的，要么都是 context 上的
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
         this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
 
