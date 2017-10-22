@@ -9,7 +9,7 @@ let hotReloadingVersion = 0
 const dummyState = {}
 function noop() {}
 function makeSelectorStateful(sourceSelector, store) {
-  // wrap the selector in an object that tracks its results between runs.
+  // 返回一个对象，目的是为了再运行时可以获得它的结果
   const selector = {
     run: function runComponentSelector(props) {
       try {
@@ -32,24 +32,21 @@ function makeSelectorStateful(sourceSelector, store) {
 // connect 核心部分
 export default function connectAdvanced(
   /*
-    selectorFactory is a func that is responsible for returning the selector function used to
-    compute new props from state, props, and dispatch. For example:
+
+    selectorFactory 是一个工厂函数，它负责返回真正的 selector 函数，这些 selector 函数会利用 state，props，和 dispatch 生成新的 props，举个例子：
 
       export default connectAdvanced((dispatch, options) => (state, props) => ({
         thing: state.things[props.thingId],
         saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
       }))(YourComponent)
 
-    Access to dispatch is provided to the factory so selectorFactories can bind actionCreators
-    outside of their selector as an optimization. Options passed to connectAdvanced are passed to
-    the selectorFactory, along with displayName and WrappedComponent, as the second argument.
+    因为这个工厂函数可以获取到 dispatch，所以他们可以在他们的 selector 之外绑定 actionCreators。传递给 connectAdvanced 的参数会被传递给 selectorFactory，
+    displayName 和 WrappedComponent 则会被做为第二个参数
 
-    Note that selectorFactory is responsible for all caching/memoization of inbound and outbound
-    props. Do not use connectAdvanced directly without memoizing results between calls to your
-    selector, otherwise the Connect component will re-render on every state or props change.
+    注意：selectorFactory 负责缓存和记忆自有和父组件传递进来的 props。
+    所以不要使用未缓存的结果直接调用 connectAdvanced，否则每当 state 和 props 变化时 Connect 组件都会 re-render。
   */
   selectorFactory,
-  // options object:
   {
       // 通过容器组件的 displayName 生成高阶组件的 displayName，通常会被容器函数覆盖，比如 connect 就覆盖了这个函数
     getDisplayName = name => `ConnectAdvanced(${name})`,
@@ -57,10 +54,7 @@ export default function connectAdvanced(
       // 错误提示时使用，通常也会被覆盖掉
     methodName = 'connectAdvanced',
 
-    // if defined, the name of the property passed to the wrapped element indicating the number of
-    // calls to render. useful for watching in react devtools for unnecessary re-renders.
-    // TODO
-    // 通常在 react devtools 中被用来监听一些无意义的重复渲染
+    // 通常在 react devtools 中使用，被用来监听一些无意义的重复渲染
     renderCountProp = undefined,
 
     // 决定这个高阶组件是否要监听 store 的变化
@@ -145,14 +139,9 @@ export default function connectAdvanced(
       componentDidMount() {
         if (!shouldHandleStateChanges) return
 
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
         // SSR 时会触发componentWillMount，但是不会触发 componentDidMount 和 componentWillUnmount
-        //
+        // 因此，只有 ...didMount 时期才会触发 trySubscribe，否则，unsubscription 在 SSR 时不会被调用,可能导致内存泄露
+        // 为了解决这个问题，当一个子组件在 componentWillMount 中 dispatch action 时，它可能会触发 state 变化，我们则不得不重新计算select
         this.subscription.trySubscribe()
         this.selector.run(this.props)
         if (this.selector.shouldComponentUpdate) this.forceUpdate()

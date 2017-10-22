@@ -20,7 +20,7 @@ export function pureFinalPropsSelectorFactory(
   mapDispatchToProps,
   mergeProps,
   dispatch,
-  { areStatesEqual, areOwnPropsEqual, areStatePropsEqual }
+  { areStatesEqual, areOwnPropsEqual, areStatePropsEqual } /*全部是 shallowEqual */
 ) {
   let hasRunAtLeastOnce = false
   let state
@@ -77,12 +77,14 @@ export function pureFinalPropsSelectorFactory(
     state = nextState
     ownProps = nextOwnProps
 
+    // 判断 props 和 state 的变化状态，确认返回哪个函数
     if (propsChanged && stateChanged) return handleNewPropsAndNewState()
     if (propsChanged) return handleNewProps()
     if (stateChanged) return handleNewState()
     return mergedProps
   }
 
+  // 对首次和后续的做区分，首次是不需要与之前的数据做比较的
   return function pureFinalPropsSelector(nextState, nextOwnProps) {
     return hasRunAtLeastOnce
       ? handleSubsequentCalls(nextState, nextOwnProps)
@@ -92,11 +94,8 @@ export function pureFinalPropsSelectorFactory(
 
 // TODO: Add more comments
 
-// If pure is true, the selector returned by selectorFactory will memoize its results,
-// allowing connectAdvanced's shouldComponentUpdate to return false if final
-// props have not changed. If false, the selector will always return a new
-// object and shouldComponentUpdate will always return true.
-// selectorFactory 就是根据 pure 做的一系列
+// 如果 pure 为 true，selectorFactory 返回的 selector 会缓存结果，便于对 props 做对比，如果生成的 props 的引用没有变化，connectAdvanced 的 shouldComponentUpdate 就返回 false
+// 如果 pure 为 false，selector 就会返回一个新的对象，并且 shouldComponentUpdate 永远为 true
 export default function finalPropsSelectorFactory(dispatch, {
   initMapStateToProps,
   initMapDispatchToProps,
