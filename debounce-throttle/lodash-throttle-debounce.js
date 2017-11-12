@@ -63,11 +63,13 @@ function debounce(func, wait, options) {
         timerId,
         lastCallTime
 
+    // 参数初始化
     let lastInvokeTime = 0 // func 上一次执行的时间
     let leading = false
     let maxing = false
     let trailing = true
 
+    // 基本的类型判断和处理
     if (typeof func != 'function') {
         throw new TypeError('Expected a function')
     }
@@ -116,12 +118,13 @@ function debounce(func, wait, options) {
         // 几种满足条件的情况
         return (lastCallTime === undefined //首次
             || (timeSinceLastCall >= wait) // 距离上次被调用已经超过 wait
-            || (timeSinceLastCall < 0) //浏览器被后台挂起后又
+            || (timeSinceLastCall < 0) //系统时间倒退
             || (maxing && timeSinceLastInvoke >= maxWait)) //超过最大等待时间
     }
 
     function timerExpired() {
         const time = Date.now()
+        // 在 trailing edge 且时间符合条件时，调用 trailingEdge函数，否则重启定时器
         if (shouldInvoke(time)) {
             return trailingEdge(time)
         }
@@ -136,7 +139,8 @@ function debounce(func, wait, options) {
         if (trailing && lastArgs) {
             return invokeFunc(time)
         }
-        // 每次 trailingEdge 都会清除 lastArgs 和 lastThis，目的是
+        // 每次 trailingEdge 都会清除 lastArgs 和 lastThis，目的是避免最后一次函数被执行了两次
+        // 举个例子：最后一次函数执行的时候，可能恰巧是前一次的 trailing edge，函数被调用，而这个函数又需要在自己时延的 trailing edge 触发，导致触发多次
         lastArgs = lastThis = undefined
         return result
     }
@@ -166,7 +170,7 @@ function debounce(func, wait, options) {
         lastCallTime = time  //函数被调用的时间
 
         if (isInvoking) {
-            if (timerId === undefined) { // 无timerId的情况：1.首次调用 2.trailingEdge执行过函数
+            if (timerId === undefined) { // 无timerId的情况有两种：1.首次调用 2.trailingEdge执行过函数
                 return leadingEdge(lastCallTime)
             }
             if (maxing) {
@@ -175,6 +179,8 @@ function debounce(func, wait, options) {
                 return invokeFunc(lastCallTime)
             }
         }
+        // 负责一种case：trailing 为 true 的情况下，在前一个 wait 的 trailingEdge 已经执行了函数；
+        // 而这次函数被调用时 shouldInvoke 不满足条件，因此要设置定时器，在本次的 trailingEdge 保证函数被执行
         if (timerId === undefined) {
             timerId = setTimeout(timerExpired, wait)
         }
