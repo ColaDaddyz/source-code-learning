@@ -92,7 +92,7 @@ function debounce(func, wait, options) {
     }
 
     function leadingEdge(time) {
-        // Reset any `maxWait` timer.
+        // 重置由上一次 maxing 导致的lastInvokeTime的变化
         lastInvokeTime = time
         // 为 trailing edge 触发函数调用设定定时器
         timerId = setTimeout(timerExpired, wait)
@@ -101,10 +101,13 @@ function debounce(func, wait, options) {
     }
 
     function remainingWait(time) {
-        const timeSinceLastCall = time - lastCallTime
-        const timeSinceLastInvoke = time - lastInvokeTime
-        const timeWaiting = wait - timeSinceLastCall
+        const timeSinceLastCall = time - lastCallTime // 距离上次debounced函数被调用的时间
+        const timeSinceLastInvoke = time - lastInvokeTime // 距离上次函数被执行的时间
+        const timeWaiting = wait - timeSinceLastCall // 用 wait 减去 timeSinceLastCall 计算出下一次trailing的位置
 
+        // 两种情况
+        // 有maxing:比较出下一次maxing和下一次trailing的最小值，作为下一次函数要执行的时间
+        // 无maxing：在下一次trailing时执行 timerExpired
         return maxing
             ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke)
             : timeWaiting
@@ -128,7 +131,7 @@ function debounce(func, wait, options) {
         if (shouldInvoke(time)) {
             return trailingEdge(time)
         }
-        // 重启定时器，保证下一次时延的末尾触发
+        // 重启定时器
         timerId = setTimeout(timerExpired, remainingWait(time))
     }
 
