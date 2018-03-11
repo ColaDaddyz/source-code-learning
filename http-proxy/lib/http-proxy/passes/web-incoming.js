@@ -19,11 +19,10 @@ web_o = Object.keys(web_o).map(function(pass) {
 module.exports = {
 
   /**
-   * Sets `content-length` to '0' if request is of DELETE type.
-   *
-   * @param {ClientRequest} Req Request object
-   * @param {IncomingMessage} Res Response object
-   * @param {Object} Options Config object passed to the proxy
+   * 如果是一个 DELETE 或者 OPTIONS 请求，将 content-length 设置为0
+   * @param {ClientRequest} Req Request 对象
+   * @param {IncomingMessage} Res Response 对象
+   * @param {Object} Options 传给proxy的配置项
    *
    * @api private
    */
@@ -37,8 +36,8 @@ module.exports = {
   },
 
   /**
-   * Sets timeout in request socket if it was specified in options.
    *
+   * 设置超时时间
    * @param {ClientRequest} Req Request object
    * @param {IncomingMessage} Res Response object
    * @param {Object} Options Config object passed to the proxy
@@ -53,7 +52,7 @@ module.exports = {
   },
 
   /**
-   * Sets `x-forwarded-*` headers if specified in config.
+   * 设置 x-forwarded-* headers
    *
    * @param {ClientRequest} Req Request object
    * @param {IncomingMessage} Res Response object

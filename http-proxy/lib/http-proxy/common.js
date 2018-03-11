@@ -150,7 +150,7 @@ common.getPort = function(req) {
 };
 
 /**
- * Check if the request has an encrypted connection.
+ * 检测是否是加密的连接
  *
  * @param {Request} req Incoming HTTP request.
  *

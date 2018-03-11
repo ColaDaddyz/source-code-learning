@@ -10,6 +10,7 @@ var httpProxy = module.exports,
 httpProxy.Server = ProxyServer;
 
 /**
+ *
  * Returns a function that creates the loader for
  * either `ws` or `web`'s  passes.
  *
